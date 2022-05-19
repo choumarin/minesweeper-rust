@@ -1,0 +1,41 @@
+name: Create website
+
+on:
+  push:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }} 
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Install wasm-pack
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.3.0
+        with:
+          # Optional version of wasm-pack to install(eg. 'v0.9.1', 'latest')
+          version: 'latest'
+
+      # Build and pack
+      - name: Build and pack
+        run: |
+          wasm-pack build --target web --out-dir web/pkg
+          rm -f web/pkg/.gitignore
+          touch web/.nojekyll
+          ls -alhR web
+
+      # Deploy to web branch
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        if: success()
+        with:
+          branch: web
+          folder: web
